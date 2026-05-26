@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Nested Artifact"
+  short_description: "Create artifact skeletons with subcomponent requirements"
+  default_prompt: "Create an artifact or one decomposition layer with subcomponent placeholders and requirement documents."
