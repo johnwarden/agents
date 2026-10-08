@@ -1,6 +1,6 @@
-# Cursor cloud agent toolchain (Context Bot)
+# Cursor cloud agent toolchain: worked example (context-bot, Elixir)
 
-Repo-wide standard (devbox/direnv/just/secrets.sh, and what cloud VMs must still provide, incl. `just`): `repo-setup/repo-standard.md`.
+This is a dated log of how `social-protocols/context-bot` got its cloud environment right. It is an example, not the standard. The general rules for cloud VMs are in `repo-setup/repo-standard.md` § 4; follow those and use this file for the reasoning and the pitfalls.
 
 Agents on default Ubuntu VMs will not have `mix` / `devbox` / `direnv`. Observed 2026-08-25: `which mix` missing even though `.cursor/environment.json` existed.
 

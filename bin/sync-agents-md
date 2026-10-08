@@ -1,44 +1,114 @@
 #!/usr/bin/env python3
-"""Vendor the shared AGENTS.md into a project's AGENTS.md.
+"""Vendor shared instruction blocks into a project's AGENTS.md.
 
-Usage: sync-agents-md <project-dir> [<shared-AGENTS.md>]
+Always syncs the shared-agents block (this repo's AGENTS.md) at the top of
+<project-dir>/AGENTS.md. With --shipping, or when the project already carries
+a shipping block, also syncs the shared-shipping block (this repo's
+repo-setup/templates/AGENTS.shipping.md) directly below it.
 
-The shared text is written between marker comments at the top of the
-project's AGENTS.md. Anything outside the markers is project-specific and
-left untouched. Re-running replaces only the block between the markers.
+Each block sits between marker comments. Text outside the markers is
+project-specific and left untouched. Re-running replaces only the blocks.
+
+Shipping options are remembered in the shipping start marker, so a plain
+re-run keeps the trunk name and deploy setting chosen earlier.
 """
+import argparse
+import re
 import sys
 from pathlib import Path
 
-START = "<!-- shared-agents:start (do not edit; run bin/sync-agents-md) -->"
-END = "<!-- shared-agents:end -->"
+HERE = Path(__file__).resolve().parent.parent
+SHARED_SRC = HERE / "AGENTS.md"
+SHIPPING_SRC = HERE / "repo-setup" / "templates" / "AGENTS.shipping.md"
+
+AGENTS = "shared-agents"
+SHIPPING = "shared-shipping"
+NOTE = "do not edit; run bin/sync-agents-md"
 
 
-def main() -> int:
-    if len(sys.argv) < 2:
-        print(__doc__)
-        return 2
-    project = Path(sys.argv[1]).expanduser().resolve()
-    shared_path = (
-        Path(sys.argv[2]).expanduser().resolve()
-        if len(sys.argv) > 2
-        else Path(__file__).resolve().parent.parent / "AGENTS.md"
+def start_marker(name, opts=""):
+    return f"<!-- {name}:start{opts} ({NOTE}) -->"
+
+
+def end_marker(name):
+    return f"<!-- {name}:end -->"
+
+
+def find_block(text, name):
+    """Return (start_idx, end_idx, opts) of an existing block, or None."""
+    m = re.search(rf"<!-- {name}:start([^>(]*)\(", text)
+    if not m:
+        return None
+    end = text.find(end_marker(name), m.start())
+    if end < 0:
+        return None
+    return m.start(), end + len(end_marker(name)), m.group(1)
+
+
+def parse_opts(opts):
+    return dict(kv.split("=", 1) for kv in opts.split() if "=" in kv)
+
+
+def upsert(text, name, block, after=None):
+    """Replace block `name` in place, else insert it after block `after`, else at top."""
+    found = find_block(text, name)
+    if found:
+        s, e, _ = found
+        return text[:s] + block + text[e:]
+    anchor = find_block(text, after) if after else None
+    if anchor:
+        _, e, _ = anchor
+        return text[:e] + "\n\n" + block + text[e:]
+    body = text.lstrip("\n")
+    return block + ("\n\n" + body if body.strip() else "\n")
+
+
+def render_shipping(trunk, deploy):
+    tpl = SHIPPING_SRC.read_text().strip().replace("<TRUNK>", trunk)
+
+    def pick(m):
+        return (m.group(1) if deploy else m.group(2)).strip("\n")
+
+    tpl = re.sub(
+        r"<!-- if:deploy -->\n(.*?)<!-- else:deploy -->\n(.*?)<!-- end:deploy -->",
+        pick,
+        tpl,
+        flags=re.S,
     )
-    shared = shared_path.read_text().strip()
-    block = f"{START}\n{shared}\n{END}\n"
+    opts = f" trunk={trunk} deploy={'yes' if deploy else 'no'}"
+    return f"{start_marker(SHIPPING, opts)}\n{tpl}\n{end_marker(SHIPPING)}"
 
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("project", help="project directory containing (or to receive) AGENTS.md")
+    p.add_argument("--shipping", action="store_true", help="also sync the shipping block")
+    p.add_argument("--trunk", metavar="NAME", help="integration branch (default: .cursor/trunk, else main)")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--deploy", dest="deploy", action="store_true", default=None, help="keep the CI-and-deploy rules (default)")
+    g.add_argument("--no-deploy", dest="deploy", action="store_false", help="use the no-deploy variant")
+    a = p.parse_args()
+
+    project = Path(a.project).expanduser().resolve()
     target = project / "AGENTS.md"
     existing = target.read_text() if target.exists() else ""
 
-    if START in existing and END in existing:
-        head, rest = existing.split(START, 1)
-        _, tail = rest.split(END, 1)
-        tail = tail.lstrip("\n")
-        new = head + block + ("\n" + tail if tail.strip() else "")
-    else:
-        body = existing.lstrip("\n")
-        new = block + ("\n" + body if body.strip() else "")
+    shared = SHARED_SRC.read_text().strip()
+    new = upsert(existing, AGENTS, f"{start_marker(AGENTS)}\n{shared}\n{end_marker(AGENTS)}")
 
+    found = find_block(existing, SHIPPING)
+    if a.shipping or found:
+        prev = parse_opts(found[2]) if found else {}
+        trunk = a.trunk or prev.get("trunk")
+        if not trunk:
+            tf = project / ".cursor" / "trunk"
+            trunk = tf.read_text().strip() if tf.exists() else ""
+            trunk = trunk or "main"
+        deploy = a.deploy if a.deploy is not None else prev.get("deploy", "yes") != "no"
+        new = upsert(new, SHIPPING, render_shipping(trunk, deploy), after=AGENTS)
+
+    if not new.endswith("\n"):
+        new += "\n"
     if new == existing:
         print(f"unchanged: {target}")
         return 0

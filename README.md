@@ -1,14 +1,15 @@
 # agents
 
 Canonical, harness-agnostic configuration for coding agents: shared
-instructions and shared skills. One source, vendored or linked everywhere.
+instructions, shared skills, and the repo-setup standard. One source,
+vendored or linked everywhere.
 
 ## Layout
 
-- `AGENTS.md` — standing instructions shared by every harness and every repo.
-- `skills/` — skills in the SKILL.md format read by Codex, Claude Code, and Cursor.
-- `bin/sync-agents-md` — copies `AGENTS.md` into a project between marker comments.
-- `repo-setup/` — shipping-repo install notes and templates (merge/CI/deploy rules, toolchain standard, session-start hook).
+- `AGENTS.md` — standing instructions shared by every harness and every repo (mental models).
+- `skills/` — skills in the SKILL.md format. Codex reads this directory directly; other harnesses need a copy or link.
+- `bin/sync-agents-md` — vendors the shared blocks into a project's `AGENTS.md`.
+- `repo-setup/` — the shipping-repo standard: install recipe, shipping-rules template, session-start hook, toolchain standard, merge/deploy rationale.
 
 ## Local machine
 
@@ -17,7 +18,7 @@ Each harness points at this repo rather than holding its own copy.
 | Harness | How it reads this repo |
 |---|---|
 | Claude Code | `~/.claude/CLAUDE.md` imports `@~/.agents/AGENTS.md`. |
-| Codex | `~/.codex/AGENTS.md` is a symlink to `~/.agents/AGENTS.md`. Codex also reads `~/.agents/skills` directly. |
+| Codex | `~/.codex/AGENTS.md` is a symlink to `~/.agents/AGENTS.md`. Codex also reads `~/.agents/skills`. |
 | Cursor (editor) | No global file. Paste `AGENTS.md` into Settings → Rules → User Rules by hand. |
 
 `~/.agents` is itself a symlink to this checkout.
@@ -25,52 +26,54 @@ Each harness points at this repo rather than holding its own copy.
 ## Projects and cloud agents
 
 Cloud agents only see what is committed in the repo they are working in.
-Nothing in a home directory reaches them. So every project carries a copy of
-the shared instructions at the top of its own `AGENTS.md`, between these
-markers:
+Nothing in a home directory reaches them. So every project carries copies
+of the shared text at the top of its own `AGENTS.md`, each between marker
+comments:
 
 ```
 <!-- shared-agents:start (do not edit; run bin/sync-agents-md) -->
-...shared text...
+...mental models, from AGENTS.md here...
 <!-- shared-agents:end -->
+
+<!-- shared-shipping:start trunk=main deploy=yes (do not edit; run bin/sync-agents-md) -->
+...shipping rules, from repo-setup/templates/AGENTS.shipping.md...
+<!-- shared-shipping:end -->
+
+...project-specific instructions...
 ```
 
-Project-specific instructions go below the end marker. To apply or refresh
-the shared block in a project:
+The shared-agents block goes in every repo. The shared-shipping block goes
+in repos that ship (merge, CI, deploy). Project-specific instructions go
+below the blocks and are never touched by the script.
 
 ```
-~/.agents/bin/sync-agents-md /path/to/project
+~/.agents/bin/sync-agents-md /path/to/project                  # shared block only
+~/.agents/bin/sync-agents-md /path/to/project --shipping       # both blocks
+~/.agents/bin/sync-agents-md /path/to/project --shipping --trunk master --no-deploy
 ```
 
-Then commit the result in that project. An agent working inside a project
-that cannot reach this repo can do the same thing by hand: fetch the current
-`AGENTS.md` from this repository, replace everything between the markers
-with it (or insert the block at the top if the markers are absent), and
-leave the rest of the file as is.
+The trunk name and deploy choice are recorded in the shipping start marker,
+so a later plain re-run keeps them. Commit the result in the project.
 
-Do not fetch this file at VM boot from an install or start script. Install
+A cloud agent working inside a project reaches this repo through the GitHub
+App that grants it private-repo access. It can run the script from a clone,
+or do the same by hand: fetch the current source file, replace everything
+between the matching markers, and leave the rest of the file as is.
+
+Do not fetch these files at VM boot from an install or start script. Install
 output is baked into snapshots and goes stale, start scripts are detached,
 and the fetched file appears as an uncommitted change.
 
-## Shipping a new repo
+## Setting up a repo that ships
 
-`repo-setup/` is the checklist and templates for a repo that ships (merge,
-CI, deploy). The shared block above is mental models only. Shipping rules
-are a separate project section:
+Follow `repo-setup/install-agents-md.md`. It is the single procedure for
+new repos, repos that already have an `AGENTS.md`, and repos that have none.
 
-1. Sync the shared block into the project's `AGENTS.md` (`bin/sync-agents-md`).
-2. Copy `repo-setup/templates/AGENTS.shipping.md` below the shared-agents
-   end marker. Set Trunk. Add a short project section under that.
-3. Install `repo-setup/templates/session-start.sh` as
-   `.cursor/session-start.sh` (executable) and set `environment.json`
-   `"start"` to that path.
-4. Follow `repo-setup/repo-standard.md` (devbox + direnv + just +
-   `secrets.sh`) and the checklist in `repo-setup/install-agents-md.md`.
+## Changing the shared text
 
-## Changing the shared instructions
+1. Edit `AGENTS.md` or `repo-setup/templates/AGENTS.shipping.md` here and commit.
+2. Re-run `bin/sync-agents-md` in each project and commit there. The script
+   replaces whichever blocks the project already carries.
 
-1. Edit `AGENTS.md` here and commit.
-2. Re-run `bin/sync-agents-md` in each project and commit there.
-
-Local harnesses pick the change up on their next session with no further
-steps.
+Local harnesses pick up `AGENTS.md` changes on their next session with no
+further steps.

@@ -8,7 +8,7 @@ direnv allow      # devbox pins the tools; init_hook builds the language envs
 just              # lists the commands: test, lint, check, dev, deploy, ...
 ```
 
-No other manual setup step. Existing repos adopt it when next touched. Jonathan wrote "npm init hook"; we read that as **devbox's `shell.init_hook`** in `devbox.json` (an npm package has no init hook that would do this).
+No other manual setup step. Existing repos adopt it when next touched. The per-shell setup hook is devbox's `shell.init_hook` in `devbox.json`.
 
 ## 1. Toolchain: devbox + direnv
 
@@ -79,7 +79,7 @@ Never write a machine-local path into the repo. The in-repo loader only knows th
 
 ## 4. Cursor cloud VMs
 
-Follow `repo-setup/cursor-cloud-env.md`. **No Nix, devbox or direnv on cloud VMs.** Too heavy on cold start, and direnv exports don't survive a Build snapshot.
+Rules below; `repo-setup/cursor-cloud-env.md` is a worked example from context-bot (Elixir). **No Nix, devbox or direnv on cloud VMs.** Too heavy on cold start, and direnv exports don't survive a Build snapshot.
 
 - `.cursor/Dockerfile` (via `environment.json` `build`) provides the toolchain from a language base image, **including `just`, `git`** (slim base images lack it, so `.cursor/session-start.sh` fetch/rebase and agent commits silently fail) and the non-runtime tools in `devbox.json` (e.g. `shellcheck`, `jq`), so `just lint` works there. context-bot keeps them aligned with a test, `test/cursor_dockerfile_devbox_align_test.sh`.
 - After changing `.cursor/environment.json` or `.cursor/Dockerfile`, trigger a **new Cloud Agents build** ("Update Stale Builds" pulls code but does not rebuild the image) and verify `node`/`just`/`shellcheck` versions **and one GitHub-Verified commit** in a fresh agent.
@@ -99,7 +99,7 @@ Follow `repo-setup/cursor-cloud-env.md`. **No Nix, devbox or direnv on cloud VMs
 - [ ] CI installs pinned, sha256-verified `just` (release-asset digest; same-release checksums file only if there is no digest) and runs `just check`
 - [ ] `.cursor/Dockerfile` with `just`, `git`, `shellcheck` (and other devbox dev tools) + `environment.json` (`build`, `install`, `start`)
 - [ ] README **Getting started**: `direnv allow`, then `just`, then `just dev` / `just test`, with prerequisites "Devbox, direnv hooked into your shell"
-- [ ] Root `AGENTS.md` (`repo-setup/install-agents-md.md`) project section: "Devbox+direnv is mandatory; run `direnv exec . just check` before claiming done; commands = `just`; secrets only via `secrets.sh` in the recipes that need them."
+- [ ] Root `AGENTS.md` (`repo-setup/install-agents-md.md`) project section: "Commands are `just` recipes. Run `just check` before claiming done (on a laptop, `direnv exec . just check`). Secrets only via `secrets.sh` in the recipes that need them." Never make `direnv exec` the only documented way; cloud VMs have no direnv.
 
 ### Skeletons (generic, trimmed from context-bot)
 

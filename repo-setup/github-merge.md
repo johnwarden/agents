@@ -1,4 +1,4 @@
-Agent-facing copy for every shipping repo: `repo-setup/templates/AGENTS.shipping.md` (general agents only; Cursor bits under `.cursor/`). Install: `repo-setup/install-agents-md.md`.
+Agent-facing copy for every shipping repo: `repo-setup/templates/AGENTS.shipping.md`, vendored into each project's `AGENTS.md` by `bin/sync-agents-md --shipping` (Cursor bits under `.cursor/`). Install: `repo-setup/install-agents-md.md`.
 
 # PR merge rule
 

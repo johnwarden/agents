@@ -1,41 +1,48 @@
 # Install AGENTS.md in every shipping repo
 
-There is **no** account-wide master shipping `AGENTS.md`. Agents only reliably read the copy in **that** repo. The canonical shipping template is `repo-setup/templates/AGENTS.shipping.md` in this repository. Copy it into each project's `AGENTS.md` **below** the shared-agents block (the mental models vendored by `bin/sync-agents-md`). Do **not** paste machine-local paths into the in-repo file.
+There is **no** account-wide master `AGENTS.md`. Agents only reliably read the copy in **that** repo. The canonical sources live in this repository and are vendored into each project by `bin/sync-agents-md`:
 
-Merge/CI detail: `repo-setup/github-merge.md`. Deploy lock: `repo-setup/github-deploy.md`. Cursor-only notes: `repo-setup/cursor-repo-notes.md`. Incomplete work: `repo-setup/incomplete-work.md`. The bot that owns the repo installs GitHub merge/CI wake listeners — required for every shipping repo.
+- `AGENTS.md` → the `shared-agents` block (mental models, every repo)
+- `repo-setup/templates/AGENTS.shipping.md` → the `shared-shipping` block (repos that ship)
 
-Also install:
+Do **not** paste machine-local paths into the in-repo file.
 
-- `repo-setup/templates/session-start.sh` → `.cursor/session-start.sh` (executable)
-- Wire `.cursor/environment.json` `"start": ".cursor/session-start.sh"`
-- Optional `.cursor/trunk`: one line, integration branch name (omit for `main`; repos with a multi-line branch model document their targets in `AGENTS.md` and may omit `.cursor/trunk`)
-- Cursor-only guidance from `repo-setup/cursor-repo-notes.md` under `.cursor/` (not in root `AGENTS.md`)
+Rationale and detail: merge/CI in `repo-setup/github-merge.md`, deploy lock in `repo-setup/github-deploy.md`, Cursor-only notes in `repo-setup/cursor-repo-notes.md`, incomplete work in `repo-setup/incomplete-work.md`, toolchain in `repo-setup/repo-standard.md`. The bot that owns the repo installs GitHub merge/CI wake listeners, required for every shipping repo.
 
-`session-start.sh` sets `core.hooksPath` when `.githooks` exists, `git fetch`es, fast-forwards trunk (`merge --ff-only`), and rebases a feature branch onto `origin/<trunk>` (aborts on conflict). The agent should not have to update git. A repo with no single trunk may ship a session-start that only fetches (no ff/rebase) when `.cursor/trunk` is absent, as long as it documents why. Do not change the template's default behaviour.
+## Procedure
+
+1. **Sync the blocks.** From a clone of this repo:
+
+   ```
+   bin/sync-agents-md /path/to/project --shipping [--trunk NAME] [--no-deploy]
+   ```
+
+   `--trunk` defaults to `.cursor/trunk` if present, else `main`. Use `--no-deploy` for a repo with no deploys; the block then carries the CI-only variant. Both choices are recorded in the shipping start marker and kept on later re-runs.
+
+2. **Remove hand-copied duplicates.** If the project's `AGENTS.md` already contained the shipping rules outside the markers (older repos do), delete those sections so the rules exist only inside the block. Keep everything project-specific.
+
+3. **Add or keep the project section** below the blocks: toolchain, how to run tests, deploy. Follow `repo-setup/repo-standard.md` (devbox + direnv on laptops, `just` as the only command surface, `secrets.sh`). The project section must say: "Commands are `just` recipes. Run `just check` before claiming done (on a laptop, `direnv exec . just check`). Secrets only via `secrets.sh` in the recipes that need them." Cloud VMs have no direnv, so never make `direnv exec` the only documented way.
+
+4. **Install the Cursor files.**
+   - `repo-setup/templates/session-start.sh` → `.cursor/session-start.sh` (executable)
+   - `.cursor/environment.json` with `"start": ".cursor/session-start.sh"` (create a minimal file if the repo has none)
+   - `.cursor/trunk`: one line naming the integration branch. Omit for `main`. A repo with a multi-line branch model documents its targets in `AGENTS.md` and may omit it.
+   - Cursor-only guidance from `repo-setup/cursor-repo-notes.md` goes under `.cursor/`, not in root `AGENTS.md`.
+
+   `session-start.sh` sets `core.hooksPath` when `.githooks` exists, fetches, fast-forwards trunk (`merge --ff-only`), and rebases a feature branch onto `origin/<trunk>` (aborts on conflict). Agents should not have to update git. A repo with no single trunk may ship a start that only fetches when `.cursor/trunk` is absent, as long as it documents why. Do not change the template's default behaviour.
+
+5. **Deploy workflows.** On any workflow that deploys on push to trunk, set `concurrency: group: deploy-production` and `cancel-in-progress: true` (`repo-setup/github-deploy.md`). Not a per-SHA group on that path.
+
+6. **GitHub settings.** Jonathan sets squash+FF and required PR checks once per repo (listed in the shipping block). Bots do not flip admin settings.
+
+7. **Wake listeners.** The bot that owns the repo installs after-merge and, when it uses Cursor cloud agents, CI-failure listeners (`repo-setup/incomplete-work.md`).
+
+8. **Open a PR.** Do not merge unless Jonathan says so.
+
+## Re-syncing after the shared text changes
+
+Run step 1 again with no extra flags and commit. The script replaces the blocks and keeps the recorded options.
 
 ## Naming
 
-Do **not** put the LLC name in shipping PRs, `AGENTS.md`, or other in-repo markdown. If a personal name is needed, use Jonathan’s. The shipping block in a project's `AGENTS.md` is general-purpose agent policy — no Cursor product surface, no machine-local paths.
-
-## New repo (or new Bot that ships GitHub)
-
-1. Sync the shared-agents block into the repo root `AGENTS.md` (`bin/sync-agents-md`). Copy `repo-setup/templates/AGENTS.shipping.md` **below** the end marker. Set the **Trunk** section to this repo’s integration branch.
-2. Install `.cursor/session-start.sh`, `.cursor/environment.json` `start`, and `.cursor/trunk` when trunk ≠ `main`.
-3. Add a short **project** section below the shipping rules (toolchain, how to run tests, deploy) — do not delete the shipping block. Move any Cursor Cloud-only notes under `.cursor/`.
-   Toolchain and commands follow `repo-setup/repo-standard.md` (devbox + direnv, `just` as the only command surface, `secrets.sh`).
-4. Jonathan sets GitHub squash+FF and required PR checks once (see `AGENTS.md`).
-5. On any workflow that deploys on push to trunk, set `concurrency: group: deploy-production` and `cancel-in-progress: true` (`repo-setup/github-deploy.md`). Do not use a per-SHA group on that path.
-6. The bot that owns the repo installs after-merge (and CI factory if Cursor cloud) wake listeners.
-7. Open a PR. Do not merge unless he says so.
-
-## Existing repo that already has AGENTS.md
-
-Do **not** overwrite. Keep project-specific toolchain. Ensure the shared-agents block is at the top. Add or replace a clearly marked **shipping** section so it matches `repo-setup/templates/AGENTS.shipping.md` (merge, CI on PR only, deploy on FF, hooks, no `--no-verify`, no merge without his yes). Move Cursor-only content under `.cursor/`. Open a PR. Do not merge unless he says so.
-
-## Existing repo with no AGENTS.md
-
-Sync the shared-agents block, copy `repo-setup/templates/AGENTS.shipping.md` below it, set Trunk, then add project notes. PR, do not merge unless he says so.
-
-## Who installs
-
-The Bot that owns the repo. Canonical files and this recipe live in this repository.
+Do **not** put the LLC name in shipping PRs, `AGENTS.md`, or other in-repo markdown. If a personal name is needed, use Jonathan’s. The shipping block is general-purpose agent policy: no Cursor product surface, no machine-local paths.
