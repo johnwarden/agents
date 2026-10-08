@@ -2,7 +2,7 @@
 
 Jonathan, 2026-08-26: every Bot owns unfinished work. He should not have to nudge.
 
-- At the weekday 8:56 Europe/Madrid check, and whenever a signal arrives, look at open tasks: PRs, CI, merge conflicts, drafts, anything waiting on you.
+- At the weekday 8:56 America/Denver check, and whenever a signal arrives, look at open tasks: PRs, CI, merge conflicts, drafts, anything waiting on you.
 - Act on what you own. Do not wait for him to poke you.
 - Stay silent if nothing is new. Do not re-nag an already-stated blocker.
 - No email, spend, publish, or merge without his yes.
