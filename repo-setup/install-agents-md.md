@@ -8,10 +8,10 @@ Also install:
 
 - `repo-setup/templates/session-start.sh` → `.cursor/session-start.sh` (executable)
 - Wire `.cursor/environment.json` `"start": ".cursor/session-start.sh"`
-- Optional `.cursor/trunk`: one line, integration branch name (omit for `main`; Blue Notes: `release`)
+- Optional `.cursor/trunk`: one line, integration branch name (omit for `main`; repos with a multi-line branch model document their targets in `AGENTS.md` and may omit `.cursor/trunk`)
 - Cursor-only guidance from `repo-setup/cursor-repo-notes.md` under `.cursor/` (not in root `AGENTS.md`)
 
-`session-start.sh` sets `core.hooksPath` when `.githooks` exists, `git fetch`es, fast-forwards trunk (`merge --ff-only`), and rebases a feature branch onto `origin/<trunk>` (aborts on conflict). The agent should not have to update git.
+`session-start.sh` sets `core.hooksPath` when `.githooks` exists, `git fetch`es, fast-forwards trunk (`merge --ff-only`), and rebases a feature branch onto `origin/<trunk>` (aborts on conflict). The agent should not have to update git. A repo with no single trunk may ship a session-start that only fetches (no ff/rebase) when `.cursor/trunk` is absent, as long as it documents why. Do not change the template's default behaviour.
 
 ## Naming
 

@@ -3,6 +3,9 @@
 # Install as .cursor/session-start.sh and set environment.json "start" to that
 # path. Cursor runs start on every Cloud Agent boot (detached).
 # Optional .cursor/trunk: one line naming the integration branch (default main).
+# Allowed variant (do not change this default): a repo with no single trunk may
+# ship a fetch-only start (no ff/rebase) when .cursor/trunk is absent, if it
+# documents why.
 set -u
 if [[ -d .githooks ]]; then
   git config core.hooksPath .githooks
