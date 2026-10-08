@@ -43,6 +43,10 @@ No other manual setup step. Existing repos adopt it when next touched. Jonathan 
   Project-specific recipes (`dry-run`, `live-run`, `db-migrate`, `fly-logs`, ...) are fine. Mark recipes that spend money or have external effects in their comment, for example `# PAID: ...` or `# May publish ...`.
 - Use `set shell := ["bash", "-euo", "pipefail", "-c"]` and multi-line `#!/usr/bin/env bash` + `set -euo pipefail` bodies. Use bash, not zsh, so recipes run in CI and in cloud VMs.
 - CI installs `just` (a pinned release binary, as in context-bot's `ci.yml`) and runs `just check`, or the individual recipes `check` is made of. Nothing in CI calls `npm`, `mix` or `pytest` directly.
+- **Every pinned tool download is hash-verified.** This covers CI, `.cursor/Dockerfile`, and any script that fetches a release binary. Pin the exact version and its sha256 in the committed file, and run `sha256sum -c` before you extract or run the download. Take the expected hash from these sources, in order:
+  1. **GitHub release-asset digest (first choice):** `gh api repos/OWNER/REPO/releases/tags/TAG --jq '.assets[] | "\(.name) \(.digest)"'` (drop the `sha256:` prefix).
+  2. **Fallback, only when that asset has no digest:** the project's own published checksums file (`checksums.txt`, `SHA256SUMS`, ...) from **the same release**. Assets uploaded before about mid-2025 have no digest (Hugo 0.131 and 0.145, for example). Prefer a signed checksums file (cosign/sigstore, GPG, minisign) and check the signature when one is published. Add a comment saying which source the pinned hash came from.
+  - If neither source exists, don't use that download. Pick another release, or install the tool another way (distro package, devbox). **Never allow an unverified download:** no `curl | tar` or `curl | sh` without a pinned hash. A checksums file fetched at build time from the same release does not count as verification on its own; the expected hash must be committed.
 - Git hooks (`.githooks/`, `core.hooksPath`) call recipes too: pre-commit runs fast format/compile, pre-push runs `just test`.
 
 ## 3. Secrets: secrets.sh
@@ -91,7 +95,7 @@ Follow `repo-setup/cursor-cloud-env.md`. **No Nix, devbox or direnv on cloud VMs
 - [ ] `secrets.sh` (value-free allowlisted loader with the `$SECRETS_DIR` fallback) + `.env.example` with `BITWARDEN_ITEM_ID=` (or legacy `secrets.example.sh` + gitignored `secrets.sh`)
 - [ ] `.gitignore`: `/.devbox/`, `/.direnv/`, `/.env`, `/.env.*`, `!/.env.example`, the language env dir (`.venv/`, `node_modules/`, `deps/` `_build/`), plus `secrets.sh` only for the legacy pattern
 - [ ] `.githooks/pre-commit` + `pre-push` calling recipes; `core.hooksPath` set in Cursor `install`
-- [ ] CI installs pinned `just` and runs `just check`
+- [ ] CI installs pinned, sha256-verified `just` (release-asset digest; same-release checksums file only if there is no digest) and runs `just check`
 - [ ] `.cursor/Dockerfile` with `just`, `git`, `shellcheck` (and other devbox dev tools) + `environment.json` (`build`, `install`, `start`)
 - [ ] README **Getting started**: `direnv allow`, then `just`, then `just dev` / `just test`, with prerequisites "Devbox, direnv hooked into your shell"
 - [ ] Root `AGENTS.md` (`repo-setup/install-agents-md.md`) project section: "Devbox+direnv is mandatory; run `direnv exec . just check` before claiming done; commands = `just`; secrets only via `secrets.sh` in the recipes that need them."
@@ -174,8 +178,10 @@ CI step:
 ```yaml
 - name: Install just
   run: |
-    curl -fsSL https://github.com/casey/just/releases/download/1.58.0/just-1.58.0-x86_64-unknown-linux-musl.tar.gz \
-      | sudo tar -xz -C /usr/local/bin just
+    # sha256 = GitHub release-asset digest of just-1.58.0-x86_64-unknown-linux-musl.tar.gz
+    curl -fsSL -o /tmp/just.tgz https://github.com/casey/just/releases/download/1.58.0/just-1.58.0-x86_64-unknown-linux-musl.tar.gz
+    echo "4a5cc2f53e6f0f8c59092a6cc38291eb729d46a7dd95d3ae582008881b84931d  /tmp/just.tgz" | sha256sum -c -
+    sudo tar -xzf /tmp/just.tgz -C /usr/local/bin just
 - run: just check
 ```
 
