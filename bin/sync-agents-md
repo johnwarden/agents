@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+"""Vendor the shared AGENTS.md into a project's AGENTS.md.
+
+Usage: sync-agents-md <project-dir> [<shared-AGENTS.md>]
+
+The shared text is written between marker comments at the top of the
+project's AGENTS.md. Anything outside the markers is project-specific and
+left untouched. Re-running replaces only the block between the markers.
+"""
+import sys
+from pathlib import Path
+
+START = "<!-- shared-agents:start (do not edit; run bin/sync-agents-md) -->"
+END = "<!-- shared-agents:end -->"
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print(__doc__)
+        return 2
+    project = Path(sys.argv[1]).expanduser().resolve()
+    shared_path = (
+        Path(sys.argv[2]).expanduser().resolve()
+        if len(sys.argv) > 2
+        else Path(__file__).resolve().parent.parent / "AGENTS.md"
+    )
+    shared = shared_path.read_text().strip()
+    block = f"{START}\n{shared}\n{END}\n"
+
+    target = project / "AGENTS.md"
+    existing = target.read_text() if target.exists() else ""
+
+    if START in existing and END in existing:
+        head, rest = existing.split(START, 1)
+        _, tail = rest.split(END, 1)
+        tail = tail.lstrip("\n")
+        new = head + block + ("\n" + tail if tail.strip() else "")
+    else:
+        body = existing.lstrip("\n")
+        new = block + ("\n" + body if body.strip() else "")
+
+    if new == existing:
+        print(f"unchanged: {target}")
+        return 0
+    target.write_text(new)
+    print(f"updated: {target}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
