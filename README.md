@@ -69,6 +69,10 @@ and the fetched file appears as an uncommitted change.
 Follow `repo-setup/install-agents-md.md`. It is the single procedure for
 new repos, repos that already have an `AGENTS.md`, and repos that have none.
 
+For Codex Cloud, also follow `repo-setup/codex-cloud-env.md`: connect the
+repository, configure its install script and Start skill, publish the
+prepared environment, and verify a fresh task.
+
 ## Changing the shared text
 
 1. Edit `AGENTS.md` or `repo-setup/templates/AGENTS.shipping.md` here and commit.
