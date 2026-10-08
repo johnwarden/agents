@@ -64,6 +64,11 @@ follows the shared shipping rules.
 1. Allow setup to reach the package registries and source/release hosts its
    scripts use. Use the package-manager preset or a narrow domain list.
    Verify task-time network access separately from installation access.
+   Agent-proposed configuration changes remain drafts: review them in the
+   Environment panel and click **Save draft** to apply them. In the initial
+   Pi setup, `api.github.com` was needed for PR creation, and `api.jetify.com`
+   plus `search.devbox.sh` for Devbox lockfile generation. Add hosts only when
+   the actual setup requires them; do not assume the preset covers subdomains.
 2. Run the install script, then `just check`. Check runtime, `just`, Git and
    linter versions in the setup environment.
 3. Review the Install script and Start skill, then **Publish**. This makes
