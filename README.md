@@ -8,6 +8,7 @@ instructions and shared skills. One source, vendored or linked everywhere.
 - `AGENTS.md` — standing instructions shared by every harness and every repo.
 - `skills/` — skills in the SKILL.md format read by Codex, Claude Code, and Cursor.
 - `bin/sync-agents-md` — copies `AGENTS.md` into a project between marker comments.
+- `repo-setup/` — shipping-repo install notes and templates (merge/CI/deploy rules, toolchain standard, session-start hook).
 
 ## Local machine
 
@@ -50,6 +51,21 @@ leave the rest of the file as is.
 Do not fetch this file at VM boot from an install or start script. Install
 output is baked into snapshots and goes stale, start scripts are detached,
 and the fetched file appears as an uncommitted change.
+
+## Shipping a new repo
+
+`repo-setup/` is the checklist and templates for a repo that ships (merge,
+CI, deploy). The shared block above is mental models only. Shipping rules
+are a separate project section:
+
+1. Sync the shared block into the project's `AGENTS.md` (`bin/sync-agents-md`).
+2. Copy `repo-setup/templates/AGENTS.shipping.md` below the shared-agents
+   end marker. Set Trunk. Add a short project section under that.
+3. Install `repo-setup/templates/session-start.sh` as
+   `.cursor/session-start.sh` (executable) and set `environment.json`
+   `"start"` to that path.
+4. Follow `repo-setup/repo-standard.md` (devbox + direnv + just +
+   `secrets.sh`) and the checklist in `repo-setup/install-agents-md.md`.
 
 ## Changing the shared instructions
 
