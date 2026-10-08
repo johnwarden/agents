@@ -88,7 +88,17 @@ Rules below; `repo-setup/cursor-cloud-env.md` is a worked example from context-b
 - `environment.json` `install` installs deps idempotently, does what init_hook does, and runs `git config core.hooksPath .githooks`. `start` is `.cursor/session-start.sh` (`repo-setup/install-agents-md.md`).
 - In the cloud, agents run `just <recipe>` directly, without `direnv exec`. Recipes therefore must not depend on direnv-only exports.
 
-## 5. New-repo checklist
+## 5. Codex Cloud
+
+Follow `repo-setup/codex-cloud-env.md` for repository access, Install script,
+Start skill, publication and fresh-task verification. Apply the same cloud
+principles: no Nix/devbox/direnv, all tools available to fresh shells,
+hash-verified pinned downloads, locked dependencies, and `just` recipes.
+Codex does not consume `.cursor/environment.json` or its Dockerfile. Keep its
+bootstrap in `.codex/install.sh` and configure that path in the environment UI.
+Toolchain changes require republishing, not just refreshing the repository.
+
+## 6. New-repo checklist
 
 - [ ] `devbox.json` (runtime, `just`, `jq`, `bitwarden-cli` if secrets, linters) + `devbox.lock` committed
 - [ ] `.envrc` = devbox loader only

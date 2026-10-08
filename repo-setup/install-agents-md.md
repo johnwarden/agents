@@ -23,7 +23,9 @@ Rationale and detail: merge/CI in `repo-setup/github-merge.md`, deploy lock in `
 
 3. **Add or keep the project section** below the blocks: toolchain, how to run tests, deploy. Follow `repo-setup/repo-standard.md` (devbox + direnv on laptops, `just` as the only command surface, `secrets.sh`). The project section must say: "Commands are `just` recipes. Run `just check` before claiming done (on a laptop, `direnv exec . just check`). Secrets only via `secrets.sh` in the recipes that need them." Cloud VMs have no direnv, so never make `direnv exec` the only documented way.
 
-4. **Install the Cursor files.**
+4. **Install harness-specific environment files.** For Codex Cloud, follow
+   `repo-setup/codex-cloud-env.md` for the committed bootstrap and environment
+   configuration. For Cursor, install the following:
    - `repo-setup/templates/session-start.sh` → `.cursor/session-start.sh` (executable)
    - `.cursor/environment.json` with `"start": ".cursor/session-start.sh"` (create a minimal file if the repo has none)
    - `.cursor/trunk`: one line naming the integration branch. Omit for `main`. A repo with a multi-line branch model documents its targets in `AGENTS.md` and may omit it.
