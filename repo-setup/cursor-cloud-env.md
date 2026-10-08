@@ -36,9 +36,15 @@ Jonathan: environment page → **Builds → Trigger build**. If install is still
 
 Do not drop a cloud environment that already has deploy tokens configured. Do not install Nix on the VM.
 
-## A saved dashboard environment ignores the repo file (2026-10-08)
+## Missing tools after a Dockerfile merge: stale Build (2026-10-08)
 
-If the repo already has a saved, dashboard-held Cursor environment, Cursor ignores the repo's `.cursor/environment.json`. A fresh agent then boots the system snapshot without the Dockerfile's tools (seen on jonathanwarden.com, 2026-10-08). Merging `environment.json` and `.cursor/Dockerfile` is not enough. The repo owner opens the environment in the Cursor dashboard, switches it to the repo's `.cursor/environment.json`, rebuilds it, and then checks the Dockerfile's tools in a fresh agent (`which just git shellcheck` plus the language runtime). Don't write environment IDs into repos or docs.
+The repo's `.cursor/environment.json` takes priority over personal and team saved environments (Cursor docs, "Environment resolution order"). New agents still boot from the environment's **active Build**. If that Build was made before the `environment.json`/`.cursor/Dockerfile` change merged, a fresh agent comes up without the Dockerfile's tools.
+
+1. Environment page → Builds → **Trigger New Build**. "Update Stale Builds" only pulls code and does not rebuild the image.
+2. Once the new Build is active, check the tools in a fresh agent (`which just git shellcheck` plus the language runtime) and make one GitHub-Verified commit.
+3. Only if tools are still missing: check the environment page's Config/Source field. If it does not already say Repository file, the repo owner switches it and triggers a new build. Don't ask for a switch-over before checking that field.
+
+Don't write environment IDs into repos or docs.
 
 ## Quality gate (2026-08-25)
 
