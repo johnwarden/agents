@@ -2,7 +2,7 @@ Agent-facing copy for every shipping repo: `repo-setup/templates/AGENTS.shipping
 
 # PR merge rule
 
-Jonathan: **squash to one commit, fast-forward onto trunk** (usually `main`; Blue Notes `release`). That squash commit is the new HEAD of trunk. No merge commits. Rebase-merge is not the path (it keeps N commits). All repos we ship (including `social-protocols/context-bot`). Bots do not merge unless he says so.
+Jonathan: **squash to one commit, fast-forward onto trunk** (usually `main`). That squash commit is the new HEAD of trunk. No merge commits. Rebase-merge is not the path (it keeps N commits). All repos we ship (including `social-protocols/context-bot`). Bots do not merge unless he says so.
 
 GitHub’s “Squash and merge” is the button. The squash SHA differs from the PR head; Jonathan treats the **code** as identical and does not want a second test suite on `main` for that. Ignore SHA-dependent tests.
 

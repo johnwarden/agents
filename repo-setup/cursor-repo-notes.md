@@ -12,7 +12,7 @@ Do **not** paste standing shipping rules into CloudAgent launch/reply prompts. R
 
 `install` (Build time) may set `core.hooksPath=.githooks` and warm deps. `start` is `.cursor/session-start.sh` (from `repo-setup/templates/session-start.sh`): re-sets hooksPath if `.githooks` exists, `git fetch`es, fast-forwards trunk to `origin/<trunk>`, and rebases a feature branch onto `origin/<trunk>` (aborts on conflict). Agents should not fetch, pull, or rebase unless start failed. `start` is detached, so wait for it if `origin/<trunk>` is needed immediately.
 
-Optional `.cursor/trunk` file: one line, the trunk branch name (default `main` if absent). Blue Notes: `release`.
+Optional `.cursor/trunk` file: one line, the trunk branch name (default `main` if absent). Repos with a multi-line branch model document their targets in `AGENTS.md` and may omit `.cursor/trunk`. A repo with no single trunk may ship a session-start that only fetches (no ff/rebase) when `.cursor/trunk` is absent, as long as it documents why. Do not change the template's default behaviour.
 
 Start new work from current trunk on a new VM. Reply to the existing cloud agent for the same PR; do not launch a second one on the same branch.
 
