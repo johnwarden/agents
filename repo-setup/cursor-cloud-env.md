@@ -36,6 +36,10 @@ Jonathan: environment page → **Builds → Trigger build**. If install is still
 
 Do not drop a cloud environment that already has deploy tokens configured. Do not install Nix on the VM.
 
+## A saved dashboard environment ignores the repo file (2026-10-08)
+
+If the repo already has a saved, dashboard-held Cursor environment, Cursor ignores the repo's `.cursor/environment.json`. A fresh agent then boots the system snapshot without the Dockerfile's tools (seen on jonathanwarden.com, 2026-10-08). Merging `environment.json` and `.cursor/Dockerfile` is not enough. The repo owner opens the environment in the Cursor dashboard, switches it to the repo's `.cursor/environment.json`, rebuilds it, and then checks the Dockerfile's tools in a fresh agent (`which just git shellcheck` plus the language runtime). Don't write environment IDs into repos or docs.
+
 ## Quality gate (2026-08-25)
 
 Cursor cloud agents on `social-protocols/context-bot` must not `git commit --no-verify` or `git push --no-verify` unless Jonathan says so for that commit. Put that in root `AGENTS.md` (not launch-prompt paste).
