@@ -50,14 +50,19 @@ The committed script must:
   and checks.
 
 Use **Start skill** for task-start instructions. It should run the repo's
-cheap, idempotent dependency setup after checkout refresh when needed, restore
+cheap, idempotent dependency setup after confirming the checkout, restore
 hooks if necessary, and report failures before coding. Keep shell operations
 in a committed script or `just` recipe instead of duplicating them in the UI.
 
-Codex refreshes repository state itself. Do not copy Cursor's detached
-fetch/rebase hook into Codex without checking its lifecycle. Do not silently
-rebase an in-progress task or overwrite its work. Normal PR handling still
-follows the shared shipping rules.
+Do not assume a new task refreshes Git refs. In the first Pi environment,
+a fresh task restored the setup branch and stale origin/master from the
+published filesystem, even though the PR had already been squash-merged.
+Check the actual branch, HEAD, tree SHA, and worktree status. Before publishing,
+explicitly fetch and switch/fast-forward a clean setup checkout to the approved
+base commit when needed; then verify that commit in a new task. Do not reset,
+rebase, or overwrite in-progress work. Do not copy Cursor's detached fetch/rebase
+hook without checking the actual lifecycle. Normal PR handling still follows
+the shared shipping rules.
 
 ## Prepare, publish and verify
 
@@ -71,13 +76,14 @@ follows the shared shipping rules.
    the actual setup requires them; do not assume the preset covers subdomains.
 2. Run the install script, then `just check`. Check runtime, `just`, Git and
    linter versions in the setup environment.
-3. Review the Install script and Start skill, then **Publish**. This makes
+3. Verify the setup checkout is clean and at the intended committed base.
+   Review the Install script and Start skill, then **Publish**. This makes
    the prepared filesystem available to new tasks; it does not deploy the app.
 4. Launch a fresh task. Verify repository, checkout, tools, hooks and
    `just check` again before claiming the environment is ready.
 
 After toolchain or install-script changes, edit setup and **Republish**.
-Repository refresh does not rerun installation or rebuild the toolchain.
+Updating Git refs does not rerun installation or rebuild the toolchain.
 Existing tasks retain their own files; verify changes in a new task. Do not
 delete an existing environment just to refresh it.
 
